@@ -4,8 +4,10 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.ContactsContract.CommonDataKinds.Website.URL
 import android.util.Log
 import android.widget.Button
+import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +15,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.URL
 
 class MainActivity : AppCompatActivity() {
     private val requestCodeImageGet = 100
@@ -28,6 +37,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         val photoList = mutableListOf<Photo>()
+        val moveDoodleBtn= findViewById<ImageButton>(R.id.ibtn_add_photo)
+
+        moveDoodleBtn.setOnClickListener {
+            println(downloadJson())
+        }
         findViewById<Button>(R.id.btn_gallery).setOnClickListener {
             if (checkPermissions()) {
                 val intent = Intent(Intent.ACTION_GET_CONTENT)
@@ -51,7 +65,11 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
+        CoroutineScope(Job() + Dispatchers.IO).launch {
+            val jsonString = downloadJson()
+            println(jsonString)
 
+        }
 
     }
 
@@ -89,5 +107,21 @@ class MainActivity : AppCompatActivity() {
             return false
         }
         return true
+    }
+
+    private fun downloadJson(): String {
+        val loadJson = URL("https://public.codesquad.kr/jk/doodle.json").openStream()
+        val reader = BufferedReader(InputStreamReader(loadJson, "UTF-8"))
+        val buffer = StringBuffer()
+        var endOfFile = true
+        while (endOfFile) {
+            val json = reader.readLine()
+            if (json != null) {
+                endOfFile = false
+            }
+            buffer.append(json)
+        }
+        return """$buffer""".trimIndent()
+
     }
 }
